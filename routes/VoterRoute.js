@@ -1,12 +1,12 @@
 const express = require("express");
 const {
-  _signInUser,
+  _sigUpnUser,
   _loginUser,
 } = require("../controllers/voter/AuthController");
 
 const voterRoute = express.Router();
 
-voterRoute.post("/sign-in", _signInUser);
-voterRoute.post("/sign-up", _loginUser);
+voterRoute.post("/sign-up", _sigUpnUser);
+voterRoute.post("/sign-in", _loginUser);
 
 module.exports = voterRoute;

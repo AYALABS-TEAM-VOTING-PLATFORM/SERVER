@@ -27,8 +27,11 @@ const VoterModel = mongoose.Schema({
   password: {
     type: String,
     required: [true, "Password is  required"],
-    unique: true,
     min: 6,
+  },
+  verified: {
+    type: Boolean,
+    default: false,
   },
 });
 
