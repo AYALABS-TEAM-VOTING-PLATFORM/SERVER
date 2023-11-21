@@ -1,54 +1,64 @@
+// Importing required modules
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const Voter = require("../../models/VoterModel");
 
-const saltRounds = 10;
-let privateKey = "secret";
+// Configuration
+const SALT_ROUNDS = 10;
+const PRIVATE_KEY = "secret";
 
-const _sigUpnUser = async (req, res) => {
+// Function to sign up a new voter
+const signUpUser = async (req, res) => {
   try {
     const { voterWalletAddress, fullName, country, ID, phoneNumber, password } =
       req.body;
 
+    // Validating presence of required fields
     if (!voterWalletAddress || !fullName || !country || !ID || !phoneNumber) {
       return res
         .status(400)
-        .json({ message: "Please all fields are required", status: 400 });
+        .json({ message: "Please fill in all required fields", status: 400 });
     }
 
-    if (password.length <= 6) {
+    // Validating password length
+    if (password.length <= 5) {
       return res.status(400).json({
-        message: "Passwords characters must be more than 5",
+        message: "Password must be more than 5 characters",
         status: 400,
       });
     }
 
+    // Additional validation (replace this with your actual validation logic)
     const isValidWalletAddress = true;
 
     if (!isValidWalletAddress) {
-      return res.status(400).json({
-        message: "Passwords characters must be more than 5",
-        status: 400,
-      });
+      return res
+        .status(400)
+        .json({ message: "Additional validation failed", status: 400 });
     }
 
-    const salt = bcrypt.genSaltSync(saltRounds);
+    // Hashing the password using bcrypt
+    const salt = bcrypt.genSaltSync(SALT_ROUNDS);
     const hashPassword = bcrypt.hashSync(password, salt);
 
+    // Creating a new Voter instance and saving it to the database
     const voter = new Voter({
       voterWalletAddress,
       fullName,
       country,
       voterID: ID,
-      phoneNumber: phoneNumber,
+      phoneNumber,
       password: hashPassword,
     });
-    voter.save();
+    await voter.save();
 
-    let token = jwt.sign(
+    // Generating a JWT token for the newly created voter
+    const token = jwt.sign(
       { voterId: voter.id, exp: Math.floor(Date.now() / 1000) + 60 * 60 },
-      privateKey
+      PRIVATE_KEY
     );
+
+    // Sending a success response with voter details and token
     return res.status(201).json({
       message: "Successfully created a voter",
       voter,
@@ -56,37 +66,49 @@ const _sigUpnUser = async (req, res) => {
       status: 200,
     });
   } catch (err) {
-    console.log(err);
+    console.error(err);
+    // Handling errors and sending an error response with details
     return res
       .status(500)
       .json({ message: "Something went wrong", err: JSON.stringify(err) });
   }
 };
 
-const _loginUser = async (req, res) => {
+// Function to login an existing voter
+const loginUser = async (req, res) => {
   try {
     const { voterWalletAddress, password } = req.body;
 
-    const voterDetail = await Voter.findOne({
-      voterWalletAddress: voterWalletAddress,
-    });
+    // Finding the voter in the database based on wallet address
+    const voterDetail = await Voter.findOne({ voterWalletAddress });
 
-    if (!voterDetail)
-      return res.status(404).json({ message: "User Doesnt exist" });
+    // Handling the case when the voter doesn't exist
+    if (!voterDetail) {
+      return res
+        .status(404)
+        .json({ message: "User doesn't exist", status: 404 });
+    }
 
+    // Comparing the provided password with the hashed password in the database
     const isPasswordCorrect = bcrypt.compareSync(
       password,
       voterDetail.password
     );
 
-    if (!isPasswordCorrect)
-      return res.status(401).json({ message: "Password Is not correct" });
+    // Handling incorrect password
+    if (!isPasswordCorrect) {
+      return res
+        .status(401)
+        .json({ message: "Password is not correct", status: 401 });
+    }
 
-    let token = jwt.sign(
+    // Generating a JWT token for the logged-in voter
+    const token = jwt.sign(
       { voterId: voterDetail.id, exp: Math.floor(Date.now() / 1000) + 60 * 60 },
-      privateKey
+      PRIVATE_KEY
     );
 
+    // Sending a success response with voter details, token, and status
     return res.status(201).json({
       message: "Successfully login voter",
       token,
@@ -94,11 +116,13 @@ const _loginUser = async (req, res) => {
       status: 200,
     });
   } catch (error) {
-    console.log(error);
+    console.error(error);
+    // Handling errors and sending an error response with details
     return res
       .status(500)
       .json({ message: "Something went wrong", err: JSON.stringify(error) });
   }
 };
 
-module.exports = { _sigUpnUser, _loginUser };
+// Exporting the signup and login functions for use in other files
+module.exports = { signUpUser, loginUser };
