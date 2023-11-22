@@ -13,8 +13,10 @@ app.use(cors()); // install cors
 app.use("/api/voter", voterRoute);
 app.use("/api/admin", AdminRoute);
 
+const PORT = process.env.PORT || 3001;
+
 mongoose
   .connect("mongodb+srv://collinstb:jayden38400@cluster0.rw6nzij.mongodb.net/")
   .then(() =>
-    app.listen(3001, () => console.log("Server running at port 3001"))
+    app.listen(PORT, () => console.log("Server running at port 3001"))
   );
