@@ -124,5 +124,7 @@ const loginUser = async (req, res) => {
   }
 };
 
+const _isVerified = async (req, res) => {};
+
 // Exporting the signup and login functions for use in other files
 module.exports = { signUpUser, loginUser };
